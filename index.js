@@ -178,7 +178,7 @@ function addDepartment() {
             department_name: response.newDepName
         })
         var query = `SELECT id AS ID, 
-                department_name AS Department Name 
+                department_name AS Name 
                 FROM department;`;
         connection.query(query, function(err, res) {
             console.table(res);
@@ -213,6 +213,15 @@ function viewRoles() {
                 FROM roles
                 LEFT JOIN department
                 ON roles.department_id = department.id;`;
+    connection.query(query, function(err, res) {
+        console.table(res);
+    });
+}
+
+function viewDepartment() {
+    var query = `SELECT id AS ID, 
+                department_name AS Name
+                FROM department;`;
     connection.query(query, function(err, res) {
         console.table(res);
     });
