@@ -126,8 +126,46 @@ function addEmployee() {
 }
 
 function addRole() {
+    var departments = {}
 
+    connection.query(`SELECT department_name, id
+                    FROM department;`, function(err, res) {
 
+        for (var i = 0; i < res.length; i++) {
+            departments[res[i].department_name] = res[i].id;
+        }
+
+        inquirer.prompt([{
+            name: "newRoleName",
+            type: "input",
+            message: "\nWhat is your new role's name?\n"
+        }, {
+            name: "newRoleDep",
+            type: "list",
+            message: "Which department is it in?\n",
+            choices: Object.keys(departments)
+        }, {
+            name: "salary",
+            type: "input",
+            message: "What is the role's yearly salary?\n"
+        }]).then(function(response) {
+            connection.query("INSERT INTO roles SET ?", {
+                title: response.newRoleName,
+                department_id: departments[response.newRoleDep],
+                salary: response.salary
+            })
+            var query = `SELECT roles.id AS ID, 
+                roles.title AS Role, 
+                roles.salary AS Salary,
+                department.department_name AS Department
+                FROM roles
+                LEFT JOIN department
+                ON roles.department_id = department.id;`;
+            connection.query(query, function(err, res) {
+                console.table(res);
+            });
+        })
+    })
 }
 
 function addDepartment() {
