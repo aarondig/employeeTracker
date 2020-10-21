@@ -1,6 +1,8 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+var consoleTable = require("console.table")
 var Table = require('cli-table');
+
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -72,65 +74,54 @@ function start() {
 
 function addEmployee() {
 
-    var rolesArray = [];
-    connection.query("SELECT title FROM employee INNER JOIN roles ON employee.role_id = roles.id", function(err, res) {
+    var roles = {}
+    var managers = {}
+
+    connection.query(`SELECT roles.title, roles.id
+                    FROM roles;`, function(err, res) {
+
         for (var i = 0; i < res.length; i++) {
-            rolesArray.push(res[i].title);
+            roles[res[i].title] = res[i].id;
         }
-    })
+        connection.query(`SELECT CONCAT(first_name, " ", last_name) AS Name,
+                    id
+                    FROM employee 
+                    WHERE manager_id IS NULL;`, function(err, man) {
+            for (var i = 0; i < man.length; i++) {
+                managers[man[i].Name] = man[i].id;
+            }
 
-    inquirer.prompt([{
-        name: "firstName",
-        type: "input",
-        message: "\nEnter the employee's first name:\n"
-    }, {
-        name: "lastName",
-        type: "input",
-        message: "Enter the employee's last name:\n"
-    }, {
-        name: "role",
-        type: "list",
-        message: "Enter the employee's role:\n",
-        choices: rolesArray
-    }, {
-        name: "manager",
-        type: "list",
-        message: "Is your employee a manager?\n",
-        choices: ["Yes", "No"]
+            inquirer.prompt([{
+                name: "firstName",
+                type: "input",
+                message: "\nEnter the employee's first name:\n"
+            }, {
+                name: "lastName",
+                type: "input",
+                message: "Enter the employee's last name:\n"
+            }, {
+                name: "role",
+                type: "list",
+                message: "Enter the employee's role:\n",
+                choices: Object.keys(roles)
+            }, {
+                name: "manager",
+                type: "list",
+                message: "What is the ID of your manager?\n",
+                choices: Object.keys(managers)
 
-    }]).then(function(answers) {
-        // switch (answer.manager) {
-        //     case "Yes":
-        //         answer.manager = null;
-        //         break;
-
-        //     case "No":
-        //         connection.query("SELECT first_name FROM employee INNER JOIN roles ON employee.role_id = roles.id", function(err, res) {
-        //             for (var i = 0; i < res.length; i++) {
-        //                 managersArray.push(res[i].first_name);
-        //             }
-        //         which();
-        //         function which() {
-        //             inquirer.prompt([{
-
-        //             name: "manager",
-        //             type: "list",
-        //             message: "Who is your manager??\n",
-        //             choices: 
-        //             }])
-        //         }
-        //         break;
-        // }
-        connection.query("INSERT INTO employee SET ?", {
-            first_name: answers.firstName,
-            last_name: answers.lastName,
-            role_id: answers.role,
-            manager_id: answers.manager
+            }]).then(function(answers) {
+                connection.query("INSERT INTO employee SET ?", {
+                    first_name: answers.firstName,
+                    last_name: answers.lastName,
+                    role_id: roles[answers.role],
+                    manager_id: managers[answers.manager]
+                })
+                connection.query("SELECT * FROM employee", function(err, res) {
+                    console.table(res);
+                })
+            })
         })
-        connection.query("SELECT * FROM employee", function(err, res) {
-            console.log(res);
-        })
-        start();
     })
 }
 
@@ -145,35 +136,44 @@ function addDepartment() {
 }
 
 function viewEmployees() {
-    connection.query("SELECT * FROM employee LEFT JOIN roles LEFT JOIN department ", function(err, res) {
+    var query = `SELECT CONCAT(employee.first_name, " ", employee.last_name) AS Name,
+                roles.title,
+                department.department_name, 
+                IF (CONCAT(employee2.first_name, " ", 
+                employee2.last_name) IS NULL, 
+                "Is a Manager", CONCAT(employee2.first_name, " ", employee2.last_name)) AS Manager
+                FROM employee
+                LEFT JOIN roles
+                ON employee.role_id = roles.id
+                LEFT JOIN department
+                ON roles.department_id = department.id
+                LEFT JOIN employee AS employee2
+                ON employee2.manager_id = employee.id`;
+    connection.query(query, function(err, res) {
         console.table(res);
     });
 }
 
 function viewRoles() {
-    connection.query("SELECT * FROM roles", function(err, res) {
+    var query = `SELECT roles.id AS ID, 
+                roles.title AS Role, 
+                roles.salary AS Salary,
+                department.department_name AS Department
+                FROM roles
+                LEFT JOIN department
+                ON roles.department_id = department.id;`;
+    connection.query(query, function(err, res) {
         console.table(res);
     });
 }
 
+// function updateEmployeeRole() {
+//     connection.query(`SELECT CONCAT(first_name, " ", last_name) AS Nameroles.title, roles.id
+//                     FROM employee;`, function(err, res) {
 
+//         for (var i = 0; i < res.length; i++) {
+//             roles[res[i].title] = res[i].id;
+//         }
+//     })
 
-
-
-
-// connection.query("SELECT * FROM employee", function (err, res) {
-//     var table = new Table({
-//         //You can name these table heads chicken if you'd like. They are simply the headers for a table we're putting our data in
-//         head: ["ID", "First Name", "Last Name", "Role", "Manager"],
-//         //These are just the width of the columns. Only mess with these if you want to change the cosmetics of our response
-//         colWidths: [10, 20, 15, 10, 10]
-
-//     });
-//     for (var i = 0; i < res.length; i++) {
-//         table.push(
-//             [res[i].id, res[i].first_name, res[i].last_name, res[i].roles_id, res[i].manager_id],
-//         );
-//     }
-//     console.table(table);
-// });
 // }
