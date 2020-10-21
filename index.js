@@ -21,14 +21,11 @@ connection.connect(function(err) {
     start();
 });
 
-// var employeeArray = [];
-// var roleArray = [];
-
 function start() {
     inquirer.prompt([{
         type: "list",
         name: "userOptions",
-        message: "What would you like to do?",
+        message: "\nWhat would you like to do?\n",
         choices: [
             "Add Employee",
             "Add Role",
@@ -206,7 +203,7 @@ function viewEmployees() {
 }
 
 function viewRoles() {
-    var query = `SELECT roles.id AS ID, 
+    var query = ` SELECT roles.id AS ID, 
                 roles.title AS Role, 
                 roles.salary AS Salary,
                 department.department_name AS Department
@@ -250,7 +247,7 @@ function updateEmployeeRole() {
             }, {
                 name: "role",
                 type: "list",
-                message: "What is their new role?\n",
+                message: "\nWhat is their new role?\n",
                 choices: Object.keys(roleUpdate)
             }]).then(function(response) {
                 console.log(roleUpdate[response.role]);
