@@ -167,13 +167,54 @@ function viewRoles() {
     });
 }
 
-// function updateEmployeeRole() {
-//     connection.query(`SELECT CONCAT(first_name, " ", last_name) AS Nameroles.title, roles.id
-//                     FROM employee;`, function(err, res) {
+function updateEmployeeRole() {
+    var employeeUpdate = {}
+    var roleUpdate = {}
+    connection.query(`SELECT CONCAT(first_name, " ", last_name) AS names, id
+                    FROM employee;`, function(err, res) {
 
-//         for (var i = 0; i < res.length; i++) {
-//             roles[res[i].title] = res[i].id;
-//         }
-//     })
+        for (var i = 0; i < res.length; i++) {
+            employeeUpdate[res[i].names] = res[i].id;
+        }
+        connection.query(`SELECT roles.title, roles.id
+                    FROM roles;`, function(err, rol) {
 
-// }
+            for (var i = 0; i < rol.length; i++) {
+                roleUpdate[rol[i].title] = rol[i].id;
+            }
+            inquirer.prompt([{
+                name: "employee",
+                type: "list",
+                message: "\nWhich employee would you like to update?\n",
+                choices: Object.keys(employeeUpdate)
+            }, {
+                name: "role",
+                type: "list",
+                message: "What is their new role?\n",
+                choices: Object.keys(roleUpdate)
+            }]).then(function(response) {
+                console.log(roleUpdate[response.role]);
+                console.log(employeeUpdate[response.employee]);
+                connection.query("UPDATE employee SET ? WHERE ?", [{
+                    //What Updates
+                    role_id: roleUpdate[response.role]
+                }, {
+                    //Where
+                    id: employeeUpdate[response.employee]
+                }])
+                var query = `SELECT CONCAT(employee.first_name, " ", employee.last_name) AS Name, 
+                roles.title AS Role, 
+                roles.salary AS Salary,
+                department.department_name AS Department
+                FROM employee
+                LEFT JOIN roles
+                ON employee.role_id = roles.id
+                LEFT JOIN department
+                ON roles.department_id = department.id;`;
+                connection.query(query, function(err, res) {
+                    console.table(res);
+                });
+            })
+        })
+    })
+}
