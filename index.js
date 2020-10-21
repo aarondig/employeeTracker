@@ -169,8 +169,21 @@ function addRole() {
 }
 
 function addDepartment() {
-
-
+    inquirer.prompt([{
+        name: "newDepName",
+        type: "input",
+        message: "\nWhat is your new department's name?\n"
+    }]).then(function(response) {
+        connection.query("INSERT INTO department SET ?", {
+            department_name: response.newDepName
+        })
+        var query = `SELECT id AS ID, 
+                department_name AS Department Name 
+                FROM department;`;
+        connection.query(query, function(err, res) {
+            console.table(res);
+        });
+    })
 }
 
 function viewEmployees() {
